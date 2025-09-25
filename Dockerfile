@@ -8,7 +8,7 @@ WORKDIR /app
 
 RUN adduser --disabled-password --gecos "" appuser && chown -R appuser:appuser /app
 
-COPY smtp-sanic/requirements.txt /tmp/requirements.txt
+COPY requirements.txt /tmp/requirements.txt
 RUN pip install --no-cache-dir -r /tmp/requirements.txt && rm -f /tmp/requirements.txt
 
 COPY smtp_sanic /app
