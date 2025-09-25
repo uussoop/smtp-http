@@ -114,8 +114,24 @@ async def send_email(request: Request):
     except Exception as exc:  # noqa: BLE001
         return json({"status": "error", "error": str(exc)}, status=500)
 
-    message_id = send_result[1].get("message-id") if isinstance(send_result, tuple) else None
-    return json({"status": "sent", "messageId": message_id})
+    # Normalize response (supports aiosmtplib returning tuple(code, message) or an object with .code/.message)
+    code = None
+    response_message = None
+    if isinstance(send_result, tuple):
+        if len(send_result) >= 1:
+            code = send_result[0]
+        if len(send_result) >= 2:
+            response_message = (
+                send_result[1].decode() if isinstance(send_result[1], (bytes, bytearray)) else str(send_result[1])
+            )
+    else:
+        code = getattr(send_result, "code", None)
+        raw_message = getattr(send_result, "message", None)
+        if raw_message is not None:
+            response_message = raw_message.decode() if isinstance(raw_message, (bytes, bytearray)) else str(raw_message)
+
+    message_id = message["Message-ID"] if "Message-ID" in message else None
+    return json({"status": "sent", "code": code, "message": response_message, "messageId": message_id})
 
 
 if __name__ == "__main__":
